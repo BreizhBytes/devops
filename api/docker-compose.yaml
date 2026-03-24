@@ -1,0 +1,54 @@
+version: "3.8"
+services:
+  db:
+    image: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=tlc
+      - MYSQL_USER=tlc
+      - MYSQL_PASSWORD=tlc
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  etherpad:
+    image: etherpad/etherpad:latest
+    ports:
+      - "9001:9001"
+
+    environment:
+      - AUTHENTICATION_METHOD=apikey
+    volumes:
+      - ./APIKEY.txt:/opt/etherpad-lite/APIKEY.txt
+  mail:
+    image: bytemark/smtp
+    restart: always
+    ports:
+      - "2525:25"
+
+
+
+      
+  backend:
+    build: 
+      context: ./
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:mysql://db:3306/tlc
+      - QUARKUS_DATASOURCE_USERNAME=tlc
+      - QUARKUS_DATASOURCE_PASSWORD=tlc
+
+      - DOODLE_INTERNALPADURL=http://etherpad:9001/
+      - DOODLE_EXTERNALPADURL=http://localhost:9001/
+      
+      - QUARKUS_MAILER_HOST=mail
+
+      - DOODLE_PADAPIKEY=19d89ca52bc0fa4f19d6325464d9d7a032649b9fa68c111514627081e2784b4a
+      - DOODLE_PAD_API_KEY=19d89ca52bc0fa4f19d6325464d9d7a032649b9fa68c111514627081e2784b4a
